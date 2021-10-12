@@ -1,11 +1,8 @@
 #ifndef LEXICAL_ANALYZER_H
 #define LEXICAL_ANALYZER_H
-#include <string>
-#include <map>
-#include <vector>
-#include <fstream>
-#include <iostream>
+#include "my_include.h"
 using namespace std;
+
 class lexical_analyzer{
     private:
         map<string, int> token_table;
@@ -14,14 +11,19 @@ class lexical_analyzer{
         vector<pair<int, string>> token_list;
 
         int checkSymbolTable(string & token);
-        void output(string & outputFile);
-    public:
-        // string program;
         string readProgram(string & fileName);
         void preHandle(string & program);
         void initTable();
         vector<pair<int, string>> scanner(string & program);
-        lexical_analyzer(string & inputFile, string & outputFile);
+    public:
+        lexical_analyzer(string & inputFile);
 
+        void outputSymbolAndToken(string& tokenOutput, string& symbolTableOutput);
+
+        map<string, int> & getTokenTable(void);
+
+        const vector<pair<int, string>> & getTokenList(void);
+
+        vector<string> & getSymbolTable(void);
 };
 #endif

@@ -1,0 +1,20 @@
+[非终结符]
+E S P A B D
+[终结符]
+id ( ) + - * = int int_constant float long double #
+[文法起始符]
+M
+[生成式]
+M -> P;
+P -> S # P| ;
+S -> D id;
+D -> int | float | long | double;
+S -> id = E;
+E -> E + A;
+E -> E - A;
+E -> A;
+A -> A * B;
+A -> B;
+B -> ( E );
+B -> id;
+B -> int_constant;

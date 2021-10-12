@@ -1,4 +1,4 @@
-#include "../include/lexical_analyzer.h"
+#include "lexical_analyzer.h"
 // 宏函数，用于判断token表中是否存在token
 #define checkTokenTable(cit, token)\
         cit = this->token_table.find(token);\
@@ -38,23 +38,22 @@ void lexical_analyzer::preHandle(string& program)
 {
     bool inSingleQuote = false;
     bool inDoubleQuote = false;
-    int idx = 0;
-    int len = program.size();
-    while(program[idx] != *program.end())
+    string::iterator it = program.begin();
+    while (it!= program.end())
     {
-        char chr = program[idx];
+        char chr = *it;
         // 检测到单引号
         if(chr == '\'')
         {
             inSingleQuote = !inSingleQuote;
-            idx++;
+            it++;
             continue;
         }
         // 检测双引号
         if(chr == '"')
         {
             inDoubleQuote = !inDoubleQuote;
-            idx++;
+            it++;
             continue;
         }
         // 既不在单引号也不在双引号中
@@ -65,36 +64,45 @@ void lexical_analyzer::preHandle(string& program)
                 case '/':
                 {
                     // 前一个字符是'/'，再接收到一个'/'，为单行注释
-                    if(program[idx-1]=='/')
+                    if(*(it-1)=='/')
                     {
-                        int tmp_idx = idx+1;
-                        while(program[tmp_idx]!='\n')
-                            tmp_idx++;
-                        program.erase(idx-1, tmp_idx-idx+1);
-                        idx--;
+                        string::iterator tmp_it = it + 1;
+                        while (*tmp_it != '\n')
+                            tmp_it++;
+                        it = program.erase(it - 1, tmp_it);
+
                     }
-                    else 
-                        idx++;                                // 下标向前挪动一个位置到第一个'/'的地方
+                    else
+                    {
+                        it++;              // 下标向前挪动一个位置到第一个'/'的地方
+                    }
                     break;
                 }
                 case '*':
                 {
                     // 前一个字符是'/'，再接收到一个'*'，为多行注释
-                    if(program[idx-1]=='/')
+                    if(*(it - 1) =='/')
                     {
-                        int tmp_idx = idx+1;
-                        while(1)
+                        string::iterator tmp_it = it + 1;
+                        while (1)
                         {
-                            if(program[tmp_idx] == '*')
-                                if(program[tmp_idx+1]=='/')
+                            if (*tmp_it == '*')
+                                if (*(tmp_it + 1) == '/')
                                     break;
-                            tmp_idx++;
+                            tmp_it++;
                         }
-                        program.erase(idx-1, tmp_idx-idx+3);
-                        idx--;                                  // 下标向前挪动一个位置到原来'/'的地方
+                        it = program.erase(it - 1, tmp_it+2);
                     }
                     else
-                        idx++;
+                    {
+                        it++;
+                    }
+                    break;
+                }
+                case ';':
+                {
+                    *it = '#';
+                    it++;
                     break;
                 }
                 // case ' ':
@@ -103,12 +111,16 @@ void lexical_analyzer::preHandle(string& program)
                 //     program.erase(idx, 1);
                 //     break;
                 default:
-                    idx++;
+                {
+                    it++;
+                }
             }
         }
         else
-            idx++;
-    } 
+        {
+            it++;
+        }
+    }
 }
 
 /**
@@ -118,6 +130,7 @@ void lexical_analyzer::preHandle(string& program)
  */
 void lexical_analyzer::initTable()
 {
+    this->token_table["$"]               = 0;   // 程序结束符
     this->token_table["id"]              = 1;
     this->token_table["int_constant"]    = 2;
     this->token_table["bool_constant"]   = 3;  // true or false
@@ -187,6 +200,7 @@ void lexical_analyzer::initTable()
     this->token_table["-="]              = 67;
     this->token_table["*="]              = 68;
     this->token_table["/="]              = 69;
+    this->token_table["#"]               = 70;    // 句子结束符
 }   
 /**
  * @brief  扫描经过预处理的程序字符串，生成单词序列与符号表
@@ -232,12 +246,6 @@ vector<pair<int, string>> lexical_analyzer::scanner(string & program)
                         exit(0);
                     }
                     checkTokenTable(cit, "hex_constant");
-                    // cit = this->token_table.find("hex_constant");
-                    // if(cit==token_table.end())
-                    // {
-                    //     cout<<"Unknown token "<<"hex_constant"<<endl;
-                    //     exit(0);
-                    // }
                     tokens.push_back({cit->second, token});
                     idx = ptr-1;
                 }
@@ -256,12 +264,6 @@ vector<pair<int, string>> lexical_analyzer::scanner(string & program)
                         exit(0);
                     }
                     checkTokenTable(cit, "octal_constant");
-                    // cit = this->token_table.find("octal_constant");
-                    // if(cit==token_table.end())
-                    // {
-                    //     cout<<"Unknown token "<<"octal_constant"<<endl;
-                    //     exit(0);
-                    // }
                     tokens.push_back({cit->second, token});
                     idx = ptr-1;
                 }
@@ -270,12 +272,6 @@ vector<pair<int, string>> lexical_analyzer::scanner(string & program)
                 {
                     token+=chr;
                     checkTokenTable(cit, "int_constant");
-                    // cit = this->token_table.find("int_constant");
-                    // if(cit==token_table.end())
-                    // {
-                    //     cout<<"Unknown token "<<"int_constant"<<endl;
-                    //     exit(0);
-                    // }
                     tokens.push_back({cit->second, token});
                 }
             }
@@ -296,12 +292,6 @@ vector<pair<int, string>> lexical_analyzer::scanner(string & program)
                 }
                 token = string(program, idx, ptr-idx);
                 checkTokenTable(cit, "int_constant");
-                // cit = this->token_table.find("int_constant");
-                // if(cit==token_table.end())
-                // {
-                //     cout<<"Unknown token "<<"int_constant"<<endl;
-                //     exit(0);
-                // }
                 tokens.push_back({cit->second, token});
                 idx = ptr-1;
             }
@@ -351,15 +341,11 @@ vector<pair<int, string>> lexical_analyzer::scanner(string & program)
                 case ']':
                 case '{':
                 case '}':
+                case '$':
+                case '#':
                 { 
                     token+=chr;
                     checkTokenTable(cit, token);
-                    // cit = this->token_table.find(token);
-                    // if(cit==token_table.end())
-                    // {
-                    //     cout<<"Unknown token "<<token<<endl;
-                    //     exit(0);
-                    // }
                     tokens.push_back({cit->second, token});
                     break;
                 }
@@ -369,12 +355,6 @@ vector<pair<int, string>> lexical_analyzer::scanner(string & program)
                 {
                     token+=chr;
                     checkTokenTable(cit, token);
-                    // cit = this->token_table.find(token);
-                    // if(cit==token_table.end())
-                    // {
-                    //     cout<<"Unknown token "<<token<<endl;
-                    //     exit(0);
-                    // }
                     tokens.push_back({cit->second, token});
                     // 将引号中间的字符串找出来定为字符串常量
                     int ptr = idx+1;
@@ -400,22 +380,10 @@ vector<pair<int, string>> lexical_analyzer::scanner(string & program)
                     // 将字符串变量送入单词序列
                     token = string(program, idx+1, ptr-idx-1);
                     checkTokenTable(cit, "string_constant");
-                    // cit = this->token_table.find("string_constant");
-                    // if(cit==token_table.end())
-                    // {
-                    //     cout<<"Unknown token "<<"string_constant"<<endl;
-                    //     exit(0);
-                    // }
                     tokens.push_back({cit->second, token});
                     // 将末尾引号送入单词序列
                     token = string(program, ptr, 1);
                     checkTokenTable(cit, token);
-                    // cit = this->token_table.find(token);
-                    // if(cit==token_table.end())
-                    // {
-                    //     cout<<"Unknown token "<<token<<endl;
-                    //     exit(0);
-                    // }
                     tokens.push_back({cit->second, token});
                     idx = ptr;
                     break;
@@ -432,12 +400,6 @@ vector<pair<int, string>> lexical_analyzer::scanner(string & program)
                         }
                     }
                     checkTokenTable(cit, token);
-                    // cit = this->token_table.find(token);
-                    // if(cit==token_table.end())
-                    // {
-                    //     cout<<"Unknown token "<<token<<endl;
-                    //     exit(0);
-                    // }
                     tokens.push_back({cit->second, token});
                     break;
                 }
@@ -453,12 +415,6 @@ vector<pair<int, string>> lexical_analyzer::scanner(string & program)
                         }
                     }
                     checkTokenTable(cit, token);
-                    // cit = this->token_table.find(token);
-                    // if(cit==token_table.end())
-                    // {
-                    //     cout<<"Unknown token "<<token<<endl;
-                    //     exit(0);
-                    // }
                     tokens.push_back({cit->second, token});
                     break;
                 }
@@ -474,12 +430,6 @@ vector<pair<int, string>> lexical_analyzer::scanner(string & program)
                         }
                     }
                     checkTokenTable(cit, token);
-                    // cit = this->token_table.find(token);
-                    // if(cit==token_table.end())
-                    // {
-                    //     cout<<"Unknown token "<<token<<endl;
-                    //     exit(0);
-                    // }
                     tokens.push_back({cit->second, token});
                     break;
                 }
@@ -495,12 +445,6 @@ vector<pair<int, string>> lexical_analyzer::scanner(string & program)
                         }
                     }
                     checkTokenTable(cit, token);
-                    // cit = this->token_table.find(token);
-                    // if(cit==token_table.end())
-                    // {
-                    //     cout<<"Unknown token "<<token<<endl;
-                    //     exit(0);
-                    // }
                     tokens.push_back({cit->second, token});
                     break;
                 }
@@ -516,12 +460,6 @@ vector<pair<int, string>> lexical_analyzer::scanner(string & program)
                         }
                     }
                     checkTokenTable(cit, token);
-                    // cit = this->token_table.find(token);
-                    // if(cit==token_table.end())
-                    // {
-                    //     cout<<"Unknown token "<<token<<endl;
-                    //     exit(0);
-                    // }
                     tokens.push_back({cit->second, token});
                     break;
                 }
@@ -537,12 +475,6 @@ vector<pair<int, string>> lexical_analyzer::scanner(string & program)
                         }
                     }
                     checkTokenTable(cit, token);
-                    // cit = this->token_table.find(token);
-                    // if(cit==token_table.end())
-                    // {
-                    //     cout<<"Unknown token "<<token<<endl;
-                    //     exit(0);
-                    // }
                     tokens.push_back({cit->second, token});
                     break;
                 }
@@ -559,12 +491,7 @@ vector<pair<int, string>> lexical_analyzer::scanner(string & program)
                     }
                     checkTokenTable(cit, token);
                     cit = this->token_table.find(token);
-                    // if(cit==token_table.end())
-                    // {
-                    //     cout<<"Unknown token "<<token<<endl;
-                    //     exit(0);
-                    // }
-                    // tokens.push_back({cit->second, token});
+                    tokens.push_back({cit->second, token});
                     break;
                 }
                 case '=':
@@ -579,12 +506,6 @@ vector<pair<int, string>> lexical_analyzer::scanner(string & program)
                         }
                     }
                     checkTokenTable(cit, token);
-                    // cit = this->token_table.find(token);
-                    // if(cit==token_table.end())
-                    // {
-                    //     cout<<"Unknown token "<<token<<endl;
-                    //     exit(0);
-                    // }
                     tokens.push_back({cit->second, token});
                     break;
                 }
@@ -600,13 +521,7 @@ vector<pair<int, string>> lexical_analyzer::scanner(string & program)
                         }
                     }
                     checkTokenTable(cit, token);
-                    // cit = this->token_table.find(token);
-                    // if(cit==token_table.end())
-                    // {
-                    //     cout<<"Unknown token "<<token<<endl;
-                    //     exit(0);
-                    // }
-                    // tokens.push_back({cit->second, token});
+                     tokens.push_back({cit->second, token});
                     break;
                 }
                 case '>':
@@ -621,12 +536,6 @@ vector<pair<int, string>> lexical_analyzer::scanner(string & program)
                         }
                     }
                     checkTokenTable(cit, token);
-                    // cit = this->token_table.find(token);
-                    // if(cit==token_table.end())
-                    // {
-                    //     cout<<"Unknown token "<<token<<endl;
-                    //     exit(0);
-                    // }
                     tokens.push_back({cit->second, token});
                     break;
                 }
@@ -639,6 +548,7 @@ vector<pair<int, string>> lexical_analyzer::scanner(string & program)
         }
         idx++;
     }
+    tokens.push_back({ 0, "$" });
     return tokens;
 }
 /**
@@ -663,13 +573,15 @@ int lexical_analyzer::checkSymbolTable(string & token)
  * @param  outputFile: 输出文件名
  * @retval None
  */
-void lexical_analyzer::outputSymbolAndToken(string & outputFile)
+void lexical_analyzer::outputSymbolAndToken(string & tokenOutput, string & symbolTableOutput)
 {
-    ofstream ofs(outputFile);
-    ofs<<"Token list:"<<endl;
+    ofstream ofs(tokenOutput);
+    //ofs<<"Token list:"<<endl;
     for(int i = 0; i < token_list.size(); i++)
         ofs<<'('<<token_list[i].first<<", "<<token_list[i].second<<')'<<endl;
-    ofs<<"Symbol table:"<<endl;
+    ofs.close();
+    ofs.open(symbolTableOutput);
+    //ofs<<"Symbol table:"<<endl;
     for(int i = 0; i < symbol_table.size(); i++)
         ofs<<'('<<i<<", "<<symbol_table[i]<<')'<<endl;
     ofs.close();
@@ -695,7 +607,7 @@ lexical_analyzer::lexical_analyzer(string & inputFile)
  * @note   
  * @retval 
  */
-const map<string, int> & lexical_analyzer::getTokenTable(void)
+map<string, int> & lexical_analyzer::getTokenTable(void)
 {
     return this->token_table;
 }
@@ -708,4 +620,13 @@ const map<string, int> & lexical_analyzer::getTokenTable(void)
 vector<string> & lexical_analyzer::getSymbolTable(void)
 {
     return this->symbol_table;
+}
+/**
+ * @brief  对外接口访问单词序列
+ * @note   
+ * @retval 
+ */
+const vector<pair<int, string>> & lexical_analyzer::getTokenList(void)
+{
+    return this->token_list;
 }

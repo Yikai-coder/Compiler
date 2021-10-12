@@ -1,10 +1,6 @@
 #ifndef LEXICAL_ANALYZER_H
 #define LEXICAL_ANALYZER_H
-#include <string>
-#include <map>
-#include <vector>
-#include <fstream>
-#include <iostream>
+#include "my_include.h"
 using namespace std;
 
 class lexical_analyzer{
@@ -22,9 +18,11 @@ class lexical_analyzer{
     public:
         lexical_analyzer(string & inputFile);
 
-        void outputSymbolAndToken(string & outputFile);
+        void outputSymbolAndToken(string& tokenOutput, string& symbolTableOutput);
 
-        const map<string, int> & getTokenTable(void);
+        map<string, int> & getTokenTable(void);
+
+        const vector<pair<int, string>> & getTokenList(void);
 
         vector<string> & getSymbolTable(void);
 };
