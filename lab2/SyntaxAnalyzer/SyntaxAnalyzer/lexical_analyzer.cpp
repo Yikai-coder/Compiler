@@ -185,8 +185,10 @@ void lexical_analyzer::initTable()
     this->token_table["<="]              = 52;
     this->token_table["=="]              = 53;
     this->token_table["!="]              = 54;
-    this->token_table["||"]              = 55;
-    this->token_table["&&"]              = 56;
+    //this->token_table["||"]              = 55;   因为编译工作台不支持||，所以手动将||和&&改成单词，程序不变，由词法分析器进行改动
+    this->token_table["or"]              = 55;
+        //this->token_table["&&"]              = 56;
+    this->token_table["and"]             = 56;
     this->token_table["^"]               = 57;
     this->token_table["["]               = 58;    
     this->token_table["]"]               = 59; 
@@ -455,7 +457,8 @@ vector<pair<int, string>> lexical_analyzer::scanner(string & program)
                     {
                         if(program[idx+1]=='&')
                         {
-                            token+=program[idx+1];
+                            //token+=program[idx+1];
+                            token = "and";
                             idx++;
                         }
                     }
@@ -470,7 +473,8 @@ vector<pair<int, string>> lexical_analyzer::scanner(string & program)
                     {
                         if(program[idx+1]=='|')
                         {
-                            token+=program[idx+1];
+                            //token+=program[idx+1];
+                            token = "or";
                             idx++;
                         }
                     }

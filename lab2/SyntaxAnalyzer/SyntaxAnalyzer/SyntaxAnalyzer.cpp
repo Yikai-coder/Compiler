@@ -27,7 +27,7 @@ void SyntaxAnalyzer::readActionTable(string& filename, map<string, int> & token_
 			int idx_j = 0;
 			string field;
 			istringstream sin(line);
-			while (getline(sin, field, ','))
+			while (getline(sin, field, ';'))
 			{
 				if (field == "GOTO")
 					break;
@@ -43,8 +43,15 @@ void SyntaxAnalyzer::readActionTable(string& filename, map<string, int> & token_
 			int idx_j = 0;
 			string field;
 			istringstream sin(line);
-			while (getline(sin, field, ','))
+			while (getline(sin, field, ';'))
 			{
+				// 针对表头出现","的特殊处理
+				// csv文件用","做分割，单元格中的逗号会被转化成","，从而在用getline解析的时候会解析出两个引号
+				//if (field == "\"")
+				//{
+				//	getline(sin, field, ',');
+				//	field = ",";
+				//}
 				if (idx_j > 0)
 				{
 					// 读取action_table
@@ -70,11 +77,11 @@ void SyntaxAnalyzer::readActionTable(string& filename, map<string, int> & token_
 			}
 		}
 		// 读取最后一行产生式序列
-		else if (isalpha(line[0]))
+		else if (line[0] == '[')  // 目前使用[Var]表示非终结符号
 		{
 			string field;
 			istringstream sin(line);
-			while (getline(sin, field, ','))
+			while (getline(sin, field, ';'))
 			{
 				pair<string, vector<string>> generator;
 				int split_pos = field.find(':');    // 寻找左右部分隔符号逗号的位置
@@ -92,7 +99,7 @@ void SyntaxAnalyzer::readActionTable(string& filename, map<string, int> & token_
 			string field;
 			istringstream sin(line);
 			int idx_j = 0;
-			while (getline(sin, field, ','))
+			while (getline(sin, field, ';'))
 			{
 				if (field != "" && idx_j != 0)
 				{
@@ -123,7 +130,7 @@ void SyntaxAnalyzer::readActionTable(string& filename, map<string, int> & token_
 						cout << "Can not read field content of " << field << endl;
 						exit(-1);
 					}
-					pair<int, int> first = { idx_i - 2, header[idx_j - 1] };
+					pair<int, int> first = { idx_i - 2, header[idx_j-1] };
 					this->action_table.insert({ first, second });
 				}
 				idx_j++;
@@ -177,16 +184,18 @@ void SyntaxAnalyzer::parseTokenList(const vector<pair<int, string>> token_list, 
 			int size = generator.second.size();
 			for (int i = 0; i < size; i++)
 				this->lr_stack.pop();
-			// 根据栈定状态和产生式左部查找表确定跳转状态
+			// 根据栈顶状态和产生式左部查找表确定跳转状态
 			map<string, int>::const_iterator nit = token_table.find(generator.first);
 			if (nit == token_table.end())
 			{
 				cout << "Unknown left component " << generator.first << " of generator" << endl;
+				exit(-1);
 			}
 			map<pair<int, int>, pair<action, int>>::iterator cit1 = (this->action_table).find({ this->lr_stack.top().first, nit->second });
 			if (cit1 == this->action_table.end())
 			{
 				cout << "Can not find state " << this->lr_stack.top().first <<" " << nit->second << " in goto table" << endl;
+				exit(-1);
 			}
 			this->lr_stack.push({ cit1->second.second, nit->second });
 		}

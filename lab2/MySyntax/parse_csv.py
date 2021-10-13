@@ -14,7 +14,7 @@ def parse_csv(file_name_read, file_name_write):
     csv_file_read = open(file_name_read, mode='r')
     csv_file_write = open(file_name_write, mode= 'w', newline="")
     reader=csv.reader(csv_file_read)
-    writer = csv.writer(csv_file_write)
+    writer = csv.writer(csv_file_write, delimiter = ";")
     pattern_shift = r"shift"
     pattern_reduce = r"reduce"
     generators = []
@@ -36,7 +36,8 @@ def parse_csv(file_name_read, file_name_write):
             elif((position:=re.match(pattern_reduce, item[i]))!=None):
                 item[i] = item[i].replace("reduce", "r")
                 item[i] = item[i].replace("?", " ")
-                generator = item[i].split("r")[1]
+                # generator = item[i].split("r")[1]
+                generator = item[i][2:]
                 generator = generator.split("->")
                 # generator = (generator[0].strip(), generator[1].strip())
                 # generator = generator[0].replace(" ", "")+":"+generator[1].replace(" ", "")
@@ -61,5 +62,5 @@ def parse_csv(file_name_read, file_name_write):
     csv_file_write.close()
 
 if __name__ == '__main__':
-    parse_csv(".\LR1.csv", "LR1_new.csv")
+    parse_csv(".\MySyntax.csv", "MySyntax_new.csv")
 
