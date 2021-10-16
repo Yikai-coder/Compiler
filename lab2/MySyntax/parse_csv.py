@@ -14,7 +14,7 @@ def parse_csv(file_name_read, file_name_write):
     csv_file_read = open(file_name_read, mode='r')
     csv_file_write = open(file_name_write, mode= 'w', newline="")
     reader=csv.reader(csv_file_read)
-    writer = csv.writer(csv_file_write, delimiter = ";")
+    writer = csv.writer(csv_file_write, delimiter = "\t")
     pattern_shift = r"shift"
     pattern_reduce = r"reduce"
     generators = []
@@ -62,5 +62,5 @@ def parse_csv(file_name_read, file_name_write):
     csv_file_write.close()
 
 if __name__ == '__main__':
-    parse_csv(".\MySyntax.csv", "MySyntax_new.csv")
+    parse_csv(".\MySyntax.csv", "MySyntax_new.tsv")
 

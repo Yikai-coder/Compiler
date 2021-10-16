@@ -1,11 +1,14 @@
 #include "SyntaxAnalyzer.h"
 #include "my_include.h"
+
 using namespace std;
+
 /// <summary>
 /// 读取filename中的action_table，goto_table与产生式，同时将非终结符号也加入token_table中？
 /// </summary>
-/// <param name="filename"></param>
-void SyntaxAnalyzer::readActionTable(string& filename, map<string, int> & token_table)
+/// <param name="filename">LR表的文件名</param>
+/// <param name="token_table">编码表，在这里进一步更新</param>
+void SyntaxAnalyzer::ReadActionTable(string& filename, map<string, int> & token_table)
 {
 	ifstream readfile(filename);
 	if (!readfile)
@@ -27,7 +30,7 @@ void SyntaxAnalyzer::readActionTable(string& filename, map<string, int> & token_
 			int idx_j = 0;
 			string field;
 			istringstream sin(line);
-			while (getline(sin, field, ';'))
+			while (getline(sin, field, '\t'))
 			{
 				if (field == "GOTO")
 					break;
@@ -43,15 +46,8 @@ void SyntaxAnalyzer::readActionTable(string& filename, map<string, int> & token_
 			int idx_j = 0;
 			string field;
 			istringstream sin(line);
-			while (getline(sin, field, ';'))
+			while (getline(sin, field, '\t'))
 			{
-				// 针对表头出现","的特殊处理
-				// csv文件用","做分割，单元格中的逗号会被转化成","，从而在用getline解析的时候会解析出两个引号
-				//if (field == "\"")
-				//{
-				//	getline(sin, field, ',');
-				//	field = ",";
-				//}
 				if (idx_j > 0)
 				{
 					// 读取action_table
@@ -81,16 +77,16 @@ void SyntaxAnalyzer::readActionTable(string& filename, map<string, int> & token_
 		{
 			string field;
 			istringstream sin(line);
-			while (getline(sin, field, ';'))
+			while (getline(sin, field, '\t'))
 			{
-				pair<string, vector<string>> generator;
+				pair<string, vector<string>> production;
 				int split_pos = field.find(':');    // 寻找左右部分隔符号逗号的位置
-				generator.first = field.substr(0, split_pos);   // 左部的起始位置为3，持续到逗号前的单引号
+				production.first = field.substr(0, split_pos);   // 左部的起始位置为3，持续到逗号前的单引号
 				istringstream right(field.substr(split_pos + 1, field.length() - split_pos - 1));
 				string component;
 				while (getline(right, component, ' '))
-					generator.second.push_back(component);
-				this->generator_list.push_back(generator);
+					production.second.push_back(component);
+				this->production_list.push_back(production);
 			}
 		}
 		// 读取表内容
@@ -99,7 +95,7 @@ void SyntaxAnalyzer::readActionTable(string& filename, map<string, int> & token_
 			string field;
 			istringstream sin(line);
 			int idx_j = 0;
-			while (getline(sin, field, ';'))
+			while (getline(sin, field, '\t'))
 			{
 				if (field != "" && idx_j != 0)
 				{
@@ -141,19 +137,32 @@ void SyntaxAnalyzer::readActionTable(string& filename, map<string, int> & token_
 	readfile.close();
 }
 
-SyntaxAnalyzer::SyntaxAnalyzer(const vector<pair<int, string>> & token_list, string & filename, map<string, int> & token_table)
+/// <summary>
+/// 构造函数
+/// </summary>
+/// <param name="token_list">单词序列</param>
+/// <param name="LRTableFileName">输入文件名，指LR分析表</param>
+/// <param name="token_table">编码表</param>
+/// <param name="outputFileName">输出文件名</param>
+SyntaxAnalyzer::SyntaxAnalyzer(const vector<pair<int, string>> & token_list, string & LRTableFileName, map<string, int> & token_table, string& outputFileName)
 {
-	readActionTable(filename, token_table);
-	parseTokenList(token_list, token_table);
+	
+	ReadActionTable(LRTableFileName, token_table);
+	ParseTokenList(token_list, token_table, outputFileName);
 
 }
 
-void SyntaxAnalyzer::parseTokenList(const vector<pair<int, string>> token_list, const map<string, int> & token_table)
+/// <summary>
+/// 处理单词序列，进行语法分析
+/// </summary>
+/// <param name="token_list">单词序列</param>
+/// <param name="token_table">编码表</param>
+void SyntaxAnalyzer::ParseTokenList(const vector<pair<int, string>> token_list, const map<string, int> & token_table, string & outputFileName)
 {
 	this->lr_stack.push({ ORIGIN_STATE, END_SYMBOL_ID });   // 压入栈初始状态
 	vector<pair<int, string>>::const_iterator it = token_list.begin();
-	// TODO:循环条件还没想好
-	while (1)
+	ofstream outputFile(outputFileName);
+	while (!lr_stack.empty())
 	{
 		int state = this->lr_stack.top().first;
 		map<pair<int, int>, pair<action, int>>::iterator cit = (this->action_table).find({ state, it->first });
@@ -171,24 +180,17 @@ void SyntaxAnalyzer::parseTokenList(const vector<pair<int, string>> token_list, 
 		else if (field.first == r)
 		{
 			// 寻找产生式并打印
-			pair<string, vector<string>> generator = this->generator_list[field.second];
-			vector<string>::iterator sit = generator.second.begin();
-			cout << generator.first << "->";
-			while (sit != generator.second.end())
-			{
-				cout << *sit << " ";
-				sit++;
-			}
-			cout << endl;
+			pair<string, vector<string>> production = this->production_list[field.second];
+			OutputProduction(production, outputFile);
 			// 根据产生式右部长度弹出栈
-			int size = generator.second.size();
+			int size = production.second.size();
 			for (int i = 0; i < size; i++)
 				this->lr_stack.pop();
 			// 根据栈顶状态和产生式左部查找表确定跳转状态
-			map<string, int>::const_iterator nit = token_table.find(generator.first);
+			map<string, int>::const_iterator nit = token_table.find(production.first);
 			if (nit == token_table.end())
 			{
-				cout << "Unknown left component " << generator.first << " of generator" << endl;
+				cout << "Unknown left component " << production.first << " of production" << endl;
 				exit(-1);
 			}
 			map<pair<int, int>, pair<action, int>>::iterator cit1 = (this->action_table).find({ this->lr_stack.top().first, nit->second });
@@ -210,4 +212,25 @@ void SyntaxAnalyzer::parseTokenList(const vector<pair<int, string>> token_list, 
 			exit(-1);
 		}
 	}
+	outputFile.close();
+}
+
+/// <summary>
+/// 打印产生式并输出到文件当中
+/// </summary>
+/// <param name="production">产生式数据结构，是一个pair，first为左部，为字符串；second为右部，右部为字符串数组</param>
+/// <param name="outputFile">输出的文件的文件流</param>
+void SyntaxAnalyzer::OutputProduction(std::pair<std::string, std::vector<std::string>>& production, std::ofstream& outputFile)
+{
+	vector<string>::iterator sit = production.second.begin();
+	cout << production.first << "->";
+	outputFile << production.first << "->";
+	while (sit != production.second.end())
+	{
+		cout << *sit << " ";
+		outputFile << *sit << " ";
+		sit++;
+	}
+	cout << endl;
+	outputFile << endl;
 }

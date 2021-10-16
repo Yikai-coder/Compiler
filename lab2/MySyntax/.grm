@@ -1,20 +1,60 @@
 [非终结符]
-E S P A B D
+[Program]   // 程序
+[CompUnit]  // 编译单元
+[Decl]      // 声明
+[FuncDef]   // 函数定义
+[Type]      // 变量类型
+[VarDef]    // 变量定义
+[VarDefs]   // 多个变量名/赋值表达式
+[InitVal]   // 变量初始值
+[Exp]       // 表达式
+[LExp]      // 实际表达式，不能再嵌套表达式
+[RExp]      // 次一级表达式
+[RRExp]     // 最低级表达式
+[FuncFParams]// 函数形参表
+[FuncFParam]// 函数形参
+[FuncRParam]// 函数实参
+[Block]     // 语句块
+[BlockItem] // 语句块内容
+[Stmt]      // 陈述语句
+[Bcontent]  // if-else和while语句后紧跟的内容，可以是一个语句或是一个块
+[BinOp1]     // 二元运算符1 优先级大于二元运算符2
+[BinOp2]     // 二元运算符2 优先级小于二元运算符1
+[RelOp]     // 关系运算符
+[Cond]      // 条件判断语句
+[SeleContent] // 分支语句 必须if-else搭配使用
 [终结符]
-id ( ) + - * = int int_constant float long double #
+id + - * / % = <= >= < > == != and or 
+int_constant hex_constant octal_constant string_constant
+int float long double void
+( ) { } , 
+if else while break continue return
+! #
 [文法起始符]
-M
+[Program]
 [生成式]
-M -> P;
-P -> S # P| ;
-S -> D id;
-D -> int | float | long | double;
-S -> id = E;
-E -> E + A;
-E -> E - A;
-E -> A;
-A -> A * B;
-A -> B;
-B -> ( E );
-B -> id;
-B -> int_constant;
+[Program] -> [CompUnit];
+[CompUnit] -> [Decl] [CompUnit] | [FuncDef] [CompUnit] | ;
+[Decl] -> [Type] [VarDef] , [VarDefs] # | [Type] [VarDef] #;
+[Type] -> int | float | long | double;
+[VarDefs] -> [VarDef] , [VarDefs] | [VarDef]; 
+[VarDef] -> id | id = [InitVal];
+[InitVal] -> [Exp] ; //| int_constant | hex_constant | octal_constant | string_constant;
+[Exp] -> [Exp] [BinOp2] [RExp] | [RExp] ;
+[RExp] -> [RExp] [BinOp1] [RRExp] | [RRExp] ;
+[RRExp] -> ( [Exp] ) | id ( [FuncRParam] ) | id | int_constant | hex_constant | octal_constant | string_constant;
+//[Exp] -> [LExp] [BinOp] [Exp] | ( [Exp] ) | [LExp];
+//[LExp] -> id ( [FuncRParam] ) | id;
+[FuncDef] -> [Type] id ( [FuncFParams] ) [Block];
+[Block] -> { [BlockItem] } | { };
+[BlockItem] -> [Decl] | [Stmt] | [Decl] [BlockItem] | [Stmt] [BlockItem];
+[Stmt] -> id = [InitVal] # | [SeleContent] | while ( [Cond] ) [Bcontent] | break # | continue # |return # | return [Exp] #;
+[SeleContent] -> if ( [Cond] ) [Bcontent] else [Bcontent];
+[Cond] -> [Exp] [RelOp] [Exp] | [Exp] and [Exp] | [Exp] or [Exp] | [Exp] | ! [Exp];   
+[Bcontent] -> [Stmt] | [Block] | #;
+[FuncFParams] -> [FuncFParam] | [FuncFParam] , [FuncFParams] | void;
+[FuncFParam] -> [Type] id;
+[FuncRParam] -> [Exp] | [Exp] , [FuncRParam];
+[BinOp1] -> * | / | %;
+[BinOp2] -> + | -; 
+[RelOp] -> == | != | < | <= | > | >=;

@@ -1,4 +1,4 @@
-#include "lexical_analyzer.h"
+#include "LexicalAnalyzer.h"
 // 宏函数，用于判断token表中是否存在token
 #define checkTokenTable(cit, token)\
         cit = this->token_table.find(token);\
@@ -15,7 +15,7 @@ using namespace std;
  * @param  &fileName: 文件路径字符串
  * @retval 存储程序的字符串
  */
-string lexical_analyzer::readProgram(string &fileName)
+string LexicalAnalyzer::ReadProgram(string &fileName)
 {
     ifstream ifs(fileName);
     if(!ifs.is_open())
@@ -34,7 +34,7 @@ string lexical_analyzer::readProgram(string &fileName)
  * @param  program: 程序字符串
  * @retval None
  */
-void lexical_analyzer::preHandle(string& program)
+void LexicalAnalyzer::PreHandleProgram(string& program)
 {
     bool inSingleQuote = false;
     bool inDoubleQuote = false;
@@ -128,7 +128,7 @@ void lexical_analyzer::preHandle(string& program)
  * @note   
  * @retval None
  */
-void lexical_analyzer::initTable()
+void LexicalAnalyzer::InitTable()
 {
     this->token_table["$"]               = 0;   // 程序结束符
     this->token_table["id"]              = 1;
@@ -210,7 +210,7 @@ void lexical_analyzer::initTable()
  * @param  program: 经过预处理的程序字符串
  * @retval 单词序列<编码值，单词/符号表下标>
  */
-vector<pair<int, string>> lexical_analyzer::scanner(string & program)
+vector<pair<int, string>> LexicalAnalyzer::ScanProgram(string & program)
 {
     vector<pair<int, string>> tokens;
     map<string, int>::iterator cit;
@@ -311,7 +311,7 @@ vector<pair<int, string>> lexical_analyzer::scanner(string & program)
             cit = this->token_table.find(token);
             if(cit==this->token_table.end())
             {
-                int num = this->checkSymbolTable(token);
+                int num = this->CheckSymbolTable(token);
                 if(num!=-1)
                     tokens.push_back({1, to_string(num)});
                 else
@@ -525,7 +525,7 @@ vector<pair<int, string>> lexical_analyzer::scanner(string & program)
                         }
                     }
                     checkTokenTable(cit, token);
-                     tokens.push_back({cit->second, token});
+                    tokens.push_back({cit->second, token});
                     break;
                 }
                 case '>':
@@ -561,7 +561,7 @@ vector<pair<int, string>> lexical_analyzer::scanner(string & program)
  * @param  token: 待查找字符串
  * @retval 字符串在符号表中的下标,-1表示没有找到
  */
-int lexical_analyzer::checkSymbolTable(string & token)
+int LexicalAnalyzer::CheckSymbolTable(string & token)
 {
     for(int i = 0; i < this->symbol_table.size(); i++)
     {
@@ -577,7 +577,7 @@ int lexical_analyzer::checkSymbolTable(string & token)
  * @param  outputFile: 输出文件名
  * @retval None
  */
-void lexical_analyzer::outputSymbolAndToken(string & tokenOutput, string & symbolTableOutput)
+void LexicalAnalyzer::OutputSymbolAndToken(string & tokenOutput, string & symbolTableOutput)
 {
     ofstream ofs(tokenOutput);
     //ofs<<"Token list:"<<endl;
@@ -598,12 +598,12 @@ void lexical_analyzer::outputSymbolAndToken(string & tokenOutput, string & symbo
  * @param  outputFile: 输出文件名
  * @retval 
  */
-lexical_analyzer::lexical_analyzer(string & inputFile)
+LexicalAnalyzer::LexicalAnalyzer(string & inputFile)
 {
-    initTable();
-    program = readProgram(inputFile);
-    preHandle(program);
-    token_list = scanner(program);
+    InitTable();
+    program = ReadProgram(inputFile);
+    PreHandleProgram(program);
+    token_list = ScanProgram(program);
 }
 
 /**
@@ -611,7 +611,7 @@ lexical_analyzer::lexical_analyzer(string & inputFile)
  * @note   
  * @retval 
  */
-map<string, int> & lexical_analyzer::getTokenTable(void)
+map<string, int> & LexicalAnalyzer::getTokenTable(void)
 {
     return this->token_table;
 }
@@ -621,7 +621,7 @@ map<string, int> & lexical_analyzer::getTokenTable(void)
  * @note   
  * @retval 
  */
-vector<string> & lexical_analyzer::getSymbolTable(void)
+vector<string> & LexicalAnalyzer::getSymbolTable(void)
 {
     return this->symbol_table;
 }
@@ -630,7 +630,7 @@ vector<string> & lexical_analyzer::getSymbolTable(void)
  * @note   
  * @retval 
  */
-const vector<pair<int, string>> & lexical_analyzer::getTokenList(void)
+const vector<pair<int, string>> & LexicalAnalyzer::getTokenList(void)
 {
     return this->token_list;
 }

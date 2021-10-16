@@ -1,15 +1,15 @@
 #include "SyntaxAnalyzer.h"
-#include "lexical_analyzer.h"
+#include "LexicalAnalyzer.h"
 using namespace std;
 int main(int argc, char* argv[])
 {
     string inputFile;
-    string tokenOutput;
-    string symbolTableOutput;
+    string outputFile;
     inputFile = "..\\2input_code.txt";  // E:\\Github_repositories\\Compiler\\lab1\\input_code.txt
-    string LRfileName = "..\\MySyntax_new.csv";
+    outputFile = "..\\output.txt";
+    string LRfileName = "..\\MySyntax_new.tsv";   // 使用tsv文件作为LR表的存储格式，避免逗号问题，同时兼顾可读性
 
-    lexical_analyzer l_a(inputFile);
-    SyntaxAnalyzer Syn(l_a.getTokenList(), LRfileName, l_a.getTokenTable());
+    LexicalAnalyzer l_a(inputFile);
+    SyntaxAnalyzer Syn(l_a.getTokenList(), LRfileName, l_a.getTokenTable(), outputFile);
     return 0;
 }
