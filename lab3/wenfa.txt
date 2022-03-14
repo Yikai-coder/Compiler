@@ -1,0 +1,30 @@
+P -> S
+{P.addr =S.addr ;}
+S -> D id
+{EnterTokenTable(ID.name, D.type, offset);offset =offset+D.width;} 
+D -> int
+{D.type=int; D.width=4;}
+S -> id = E
+{p = lookup(ID.name); if p == nil then error;
+printf( p‘=’ E.addr);}
+
+E -> E + A
+{E.addr = newtemp();
+printf(E.addr‘=’E1.addr‘+’A.addr);}
+
+E -> E - A
+{E.addr = newtemp();
+printf(E.addr‘=’E1.addr‘-’A.addr);}
+E -> A
+{E.addr =A.addr ;}
+A -> A * B
+{A.addr = newtemp();
+printf(A.addr‘=’A1.addr‘*’B.addr);}
+A -> B
+{A.addr=B.addr}
+B -> ( E )
+{B.addr=E.addr'}
+B -> id
+{B.addr=lookup(id.name);if B.addr=null then error;}
+B -> INT_NUM
+{B.addr=INT_NUM.lexical;}

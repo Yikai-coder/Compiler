@@ -62,5 +62,5 @@ def parse_csv(file_name_read, file_name_write):
     csv_file_write.close()
 
 if __name__ == '__main__':
-    parse_csv(".\MySyntax.csv", "MySyntax_new.tsv")
+    parse_csv(".\LR1.csv", "SimpleSyntax_LR1_new.tsv")
 
